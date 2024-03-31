@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aes_encrypt
+package aesencrypt
 
 import (
 	"testing"
@@ -21,9 +21,9 @@ import (
 func TestAes_encrypt(t *testing.T) {
 	key := "0000000000000000000000000000000000000000000000000000000000000000"
 	// iv := "00000000000000000000000000000000"
-	aesEncrypt := &Aes_encrypt{}
+	aesEncrypt := &AesEncrypt{}
 	if err := aesEncrypt.Init("aes_encrypt", key); err != nil {
-		t.Errorf("Failed to initialize Aes_encrypt: %v", err)
+		t.Errorf("Failed to initialize aes_encrypt: %v", err)
 	}
 
 	// Test case 1: encrypt a string

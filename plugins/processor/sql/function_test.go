@@ -50,12 +50,12 @@ func TestConcat(t *testing.T) {
 }
 
 func TestConcat_ws(t *testing.T) {
-	concat_ws := &Concat_ws{}
-	err := concat_ws.Init(",", "test1", "test2", "test3")
+	concatWs := &ConcatWs{}
+	err := concatWs.Init(",", "test1", "test2", "test3")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	result, err := concat_ws.Process(",", "test1", "test2", "test3")
+	result, err := concatWs.Process(",", "test1", "test2", "test3")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -212,7 +212,7 @@ func TestSubstringIndex(t *testing.T) {
 		// {[]string{"www.example.com", ".", "two"}, "", fmt.Errorf("substrindex: count parameter should be a number")},
 	}
 	for _, tc := range testCases {
-		substrIndex := &Substring_index{}
+		substrIndex := &SubstringIndex{}
 		err := substrIndex.Init(tc.input...)
 		if err != nil {
 			if err.Error() != tc.err.Error() {
@@ -221,7 +221,7 @@ func TestSubstringIndex(t *testing.T) {
 		}
 		actual, err := substrIndex.Process(tc.input...)
 		if actual != tc.expected {
-			t.Errorf("Substring_index.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
+			t.Errorf("SubstringIndex.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
 		} else if err != nil {
 			if err.Error() != tc.err.Error() {
 				t.Errorf("Substring.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
@@ -378,7 +378,7 @@ func TestRegexp_instr(t *testing.T) {
 		{[]string{"www.example.com", "e.*", "2", "2", "1"}, "NULL", nil},
 	}
 	for _, tc := range testCases {
-		substrIndex := &Regexp_instr{}
+		substrIndex := &RegexpInstr{}
 		err := substrIndex.Init(tc.input...)
 		if err != nil {
 			if err.Error() != tc.err.Error() {
@@ -387,7 +387,7 @@ func TestRegexp_instr(t *testing.T) {
 		}
 		actual, err := substrIndex.Process(tc.input...)
 		if actual != tc.expected {
-			t.Errorf("Substring_index.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
+			t.Errorf("SubstringIndex.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
 		} else if err != nil {
 			if err.Error() != tc.err.Error() {
 				t.Errorf("Substring.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
@@ -408,7 +408,7 @@ func TestRegexp_like(t *testing.T) {
 		{[]string{"www.example.com", "com."}, "0", nil},
 	}
 	for _, tc := range testCases {
-		substrIndex := &Regexp_like{}
+		substrIndex := &RegexpLike{}
 		err := substrIndex.Init(tc.input...)
 		if err != nil {
 			if err.Error() != tc.err.Error() {
@@ -417,7 +417,7 @@ func TestRegexp_like(t *testing.T) {
 		}
 		actual, err := substrIndex.Process(tc.input...)
 		if actual != tc.expected {
-			t.Errorf("Substring_index.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
+			t.Errorf("SubstringIndex.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
 		} else if err != nil {
 			if err.Error() != tc.err.Error() {
 				t.Errorf("Substring.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
@@ -435,12 +435,12 @@ func TestRegexp_replace(t *testing.T) {
 		{[]string{"www.example.com", "e", "h"}, "www.hxamplh.com", nil},
 		{[]string{"www.example.com", "k", "h"}, "www.example.com", nil},
 		{[]string{"www.example.com", "e", "h", "6"}, "www.examplh.com", nil},
-		// now support param[0] ~ param[3], not support param[4]: occurence, param[5]: mode
+		// now support param[0] ~ param[3], not support param[4]: occurrence, param[5]: mode
 		// {[]string{"www.example.com", "e", "h", "2", "1"}, "www.hxample.com", nil},
 		// {[]string{"www.example.com", "e", "h", "2", "2"}, "www.examplh.com", nil},
 	}
 	for _, tc := range testCases {
-		substrIndex := &Regexp_replace{}
+		substrIndex := &RegexpReplace{}
 		err := substrIndex.Init(tc.input...)
 		if err != nil {
 			if err.Error() != tc.err.Error() {
@@ -449,7 +449,7 @@ func TestRegexp_replace(t *testing.T) {
 		}
 		actual, err := substrIndex.Process(tc.input...)
 		if actual != tc.expected {
-			t.Errorf("Substring_index.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
+			t.Errorf("SubstringIndex.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
 		} else if err != nil {
 			if err.Error() != tc.err.Error() {
 				t.Errorf("Substring.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
@@ -475,7 +475,7 @@ func TestRegexp_substr(t *testing.T) {
 		// {[]string{"www.example.com", "e.*", "2", "2", "1"}, "NULL", nil},
 	}
 	for _, tc := range testCases {
-		substrIndex := &Regexp_substr{}
+		substrIndex := &RegexpSubstr{}
 		err := substrIndex.Init(tc.input...)
 		if err != nil {
 			if err.Error() != tc.err.Error() {
@@ -484,7 +484,7 @@ func TestRegexp_substr(t *testing.T) {
 		}
 		actual, err := substrIndex.Process(tc.input...)
 		if actual != tc.expected {
-			t.Errorf("Substring_index.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
+			t.Errorf("SubstringIndex.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
 		} else if err != nil {
 			if err.Error() != tc.err.Error() {
 				t.Errorf("Substring.Process(%v) = (%v, %v), expected (%v, %v)", tc.input, actual, err, tc.expected, tc.err)
@@ -607,7 +607,7 @@ func TestSha2(t *testing.T) {
 }
 
 func TestTo_base64(t *testing.T) {
-	tob := &To_base64{}
+	tob := &ToBase64{}
 	cases := []struct {
 		param      []string
 		expected   string

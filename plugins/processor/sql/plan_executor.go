@@ -21,14 +21,14 @@ import (
 	"github.com/alibaba/ilogtail/pkg/models"
 )
 
-func (p *ProcessorSql) predicate(content *LogContentType) (bool, error) {
+func (p *ProcessorSQL) predicate(content *LogContentType) (bool, error) {
 	if p.Plan.PredicateOper.Root == nil {
 		return true, nil
 	}
 	return p.traverse(p.Plan.PredicateOper.Root, content)
 }
 
-func (p *ProcessorSql) project(in *LogContentType) (*models.LogContents, error) {
+func (p *ProcessorSQL) project(in *LogContentType) (*models.LogContents, error) {
 	out := models.NewLogContents()
 	for _, item := range p.Plan.ProjectOper.Fields {
 		res, err := p.getValue(item.Expr, in)
@@ -40,34 +40,39 @@ func (p *ProcessorSql) project(in *LogContentType) (*models.LogContents, error) 
 	return &out, nil
 }
 
-func (p *ProcessorSql) traverse(node *Cond_, content *LogContentType) (bool, error) {
+func (p *ProcessorSQL) traverse(node *CondBase, content *LogContentType) (bool, error) {
 	ltype := node.Lexpr.GetType()
 	rtype := node.Rexpr.GetType()
-	if ltype == CondType {
-		if rtype == CondType {
+	switch ltype {
+	case CondType:
+		switch rtype {
+		case CondType:
 			return p.evaluateConditionPairs(node, content)
-		} else {
+		default:
 			return false, fmt.Errorf("condition node has unexpected children type ltype: %d, rtype: %d", ltype, rtype)
 		}
-	} else if rtype == CondType {
-		return false, fmt.Errorf("condition node has unexpected children type ltype: %d, rtype: %d", ltype, rtype)
-	} else {
-		return p.evaluateCondition(node, content)
+	default:
+		switch rtype {
+		case CondType:
+			return false, fmt.Errorf("condition node has unexpected children type ltype: %d, rtype: %d", ltype, rtype)
+		default:
+			return p.evaluateCondition(node, content)
+		}
 	}
 }
 
-func (p *ProcessorSql) evaluateConditionPairs(node *Cond_, content *LogContentType) (bool, error) {
+func (p *ProcessorSQL) evaluateConditionPairs(node *CondBase, content *LogContentType) (bool, error) {
 	switch node.Comp.Name {
 	case And:
 		{
-			left, err := p.traverse(node.Lexpr.(*Cond_), content)
+			left, err := p.traverse(node.Lexpr.(*CondBase), content)
 			if err != nil {
 				return false, err
 			}
 			if !left {
 				return false, nil
 			}
-			right, err := p.traverse(node.Rexpr.(*Cond_), content)
+			right, err := p.traverse(node.Rexpr.(*CondBase), content)
 			if err != nil {
 				return false, err
 			}
@@ -75,14 +80,14 @@ func (p *ProcessorSql) evaluateConditionPairs(node *Cond_, content *LogContentTy
 		}
 	case Or:
 		{
-			left, err := p.traverse(node.Lexpr.(*Cond_), content)
+			left, err := p.traverse(node.Lexpr.(*CondBase), content)
 			if err != nil {
 				return false, err
 			}
 			if left {
 				return true, nil
 			}
-			right, err := p.traverse(node.Rexpr.(*Cond_), content)
+			right, err := p.traverse(node.Rexpr.(*CondBase), content)
 			if err != nil {
 				return false, err
 			}
@@ -93,9 +98,9 @@ func (p *ProcessorSql) evaluateConditionPairs(node *Cond_, content *LogContentTy
 	}
 }
 
-func (p *ProcessorSql) evaluateCondition(node *Cond_, content *LogContentType) (bool, error) {
+func (p *ProcessorSQL) evaluateCondition(node *CondBase, content *LogContentType) (bool, error) {
 	// now oly not support "expression" comp "none"
-	if _, ok := node.Rexpr.(*None_); ok {
+	if _, ok := node.Rexpr.(*NoneBase); ok {
 		left, err := p.getValue(node.Lexpr, content)
 		if err != nil {
 			return false, err
@@ -119,19 +124,19 @@ func (p *ProcessorSql) evaluateCondition(node *Cond_, content *LogContentType) (
 	return p.evaluateCompare(left, right, node.Comp.Name, node.Comp.PreVal)
 }
 
-func (p *ProcessorSql) getValue(node Expr_, content *LogContentType) (string, error) {
+func (p *ProcessorSQL) getValue(node ExprBase, content *LogContentType) (string, error) {
 	switch node := node.(type) {
-	case *Attr_:
+	case *AttrBase:
 		res := (*content).Get(node.Name)
 		if res == "" && p.NoKeyError && !(*content).Contains(node.Name) {
 			return res, fmt.Errorf("attribute %s not found", node.Name)
 		}
 		return res, nil
-	case *Const_:
+	case *ConstBase:
 		return node.Value, nil
-	case *Func_:
+	case *FuncBase:
 		return p.evaluteFunc(node, content)
-	case *Case_:
+	case *CaseBase:
 		return p.evaluateCase(node, content)
 	default:
 		{
@@ -141,19 +146,19 @@ func (p *ProcessorSql) getValue(node Expr_, content *LogContentType) (string, er
 	}
 }
 
-func (p *ProcessorSql) evaluteFunc(node Expr_, content *LogContentType) (string, error) {
+func (p *ProcessorSQL) evaluteFunc(node ExprBase, content *LogContentType) (string, error) {
 	var param []string
-	for _, item := range node.(*Func_).Param {
+	for _, item := range node.(*FuncBase).Param {
 		switch item := item.(type) {
-		case *Attr_:
+		case *AttrBase:
 			res := (*content).Get(item.Name)
 			if res == "" && p.NoKeyError && !(*content).Contains(item.Name) {
 				return res, fmt.Errorf("attribute %s not found", item.Name)
 			}
 			param = append(param, res)
-		case *Const_:
+		case *ConstBase:
 			param = append(param, item.Value)
-		case *Func_:
+		case *FuncBase:
 			{
 				res, err := p.evaluteFunc(item, content)
 				if err != nil {
@@ -161,7 +166,7 @@ func (p *ProcessorSql) evaluteFunc(node Expr_, content *LogContentType) (string,
 				}
 				param = append(param, res)
 			}
-		case *Cond_:
+		case *CondBase:
 			{
 				res, err := p.traverse(item, content)
 				if err != nil {
@@ -171,14 +176,14 @@ func (p *ProcessorSql) evaluteFunc(node Expr_, content *LogContentType) (string,
 			}
 		}
 	}
-	res, err := node.(*Func_).Function.Process(param...)
+	res, err := node.(*FuncBase).Function.Process(param...)
 	if err != nil {
 		return "", err
 	}
 	return res, nil
 }
 
-func (p *ProcessorSql) evaluateCase(node *Case_, content *LogContentType) (string, error) {
+func (p *ProcessorSQL) evaluateCase(node *CaseBase, content *LogContentType) (string, error) {
 	for idx, cond := range node.CondExpr {
 		res, err := p.evaluateCondition(cond, content)
 		if err != nil {
@@ -198,7 +203,7 @@ func (p *ProcessorSql) evaluateCase(node *Case_, content *LogContentType) (strin
 	)
 }
 
-func (p *ProcessorSql) evaluateCompare(left string, right string, comp string, pattern *regexp.Regexp) (bool, error) {
+func (p *ProcessorSQL) evaluateCompare(left string, right string, comp string, pattern *regexp.Regexp) (bool, error) {
 	switch comp {
 	case Eq:
 		{

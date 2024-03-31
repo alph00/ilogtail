@@ -46,41 +46,41 @@ const (
 type ExprType int
 
 // Some types
-type Attr_ struct {
+type AttrBase struct {
 	Name string
 }
 
-type Const_ struct {
+type ConstBase struct {
 	Value string
 }
 
-type Func_ struct {
-	Param []Expr_ // assume there must be non-func expresions
+type FuncBase struct {
+	Param []ExprBase // assume there must be non-func expression
 	Function
 }
 
-type Case_ struct {
-	CondExpr []*Cond_
-	ThenExpr []Expr_
-	ElseExpr Expr_
+type CaseBase struct {
+	CondExpr []*CondBase
+	ThenExpr []ExprBase
+	ElseExpr ExprBase
 }
 
-type Cond_ struct {
-	Lexpr Expr_  `json:"-"`
-	Rexpr Expr_  `json:"-"`
-	Comp  *Comp_ // compare operator
+type CondBase struct {
+	Lexpr ExprBase  `json:"-"`
+	Rexpr ExprBase  `json:"-"`
+	Comp  *CompBase // compare operator
 }
 
-// None_ represents there is no left or right input in condition expression, not represents null value
-type None_ struct {
+// NoneBase represents there is no left or right input in condition expression, not represents null value
+type NoneBase struct {
 }
 
-type Field_ struct {
-	Expr  Expr_
+type FieldBase struct {
+	Expr  ExprBase
 	Alias string
 }
 
-type Comp_ struct {
+type CompBase struct {
 	Name   string
 	PreVal *regexp.Regexp // precompiled object for regex
 }
@@ -90,17 +90,17 @@ type Comp_ struct {
 //	type ScanOper_ struct {
 //		From interface{}
 //	}
-type PredicateOper_ struct {
-	Root *Cond_ // root node of predicate condition tree
+type PredicateOperator struct {
+	Root *CondBase // root node of predicate condition tree
 }
-type ProjectOper_ struct {
-	Fields []*Field_
+type ProjectOperator struct {
+	Fields []*FieldBase
 }
 
 // select plan
 type SelectPlan struct {
-	ProjectOper   *ProjectOper_
-	PredicateOper *PredicateOper_
+	ProjectOper   *ProjectOperator
+	PredicateOper *PredicateOperator
 	// ScanOper      ScanOper_
 }
 
@@ -108,31 +108,31 @@ type SelectPlan struct {
 type LogContentType models.KeyValues[string]
 
 // expression
-type Expr_ interface {
+type ExprBase interface {
 	GetType() ExprType
 }
 
-func (a *Attr_) GetType() ExprType {
+func (a *AttrBase) GetType() ExprType {
 	return AttrType
 }
 
-func (c *Const_) GetType() ExprType {
+func (c *ConstBase) GetType() ExprType {
 	return ConstType
 }
 
-func (f *Func_) GetType() ExprType {
+func (f *FuncBase) GetType() ExprType {
 	return FuncType
 }
 
-func (c *Cond_) GetType() ExprType {
+func (c *CondBase) GetType() ExprType {
 	return CondType
 }
 
-func (c *Case_) GetType() ExprType {
+func (c *CaseBase) GetType() ExprType {
 	return CaseType
 }
 
-func (n *None_) GetType() ExprType {
+func (n *NoneBase) GetType() ExprType {
 	return NoneType
 }
 

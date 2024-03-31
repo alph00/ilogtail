@@ -23,21 +23,21 @@ import (
 /** functions for generating select plan**/
 
 // function: generate project operator
-func (p *ProcessorSql) genProjectOper(stmt *sqlparser.Select) error {
-	p.Plan.ProjectOper = &ProjectOper_{}
+func (p *ProcessorSQL) genProjectOper(stmt *sqlparser.Select) error {
+	p.Plan.ProjectOper = &ProjectOperator{}
 	for _, field := range stmt.SelectExprs {
 		switch stmtOut := field.(type) {
 		// select non star field
 		case *sqlparser.AliasedExpr:
 			{
 				if stmt, ok := stmtOut.Expr.(*sqlparser.CaseExpr); ok {
-					caseExpr := Case_{}
+					caseExpr := CaseBase{}
 					// select CASE attibute WHEN expression THEN expression ELSE expression END;
 					if stmt.Expr != nil {
 						for _, stmtIn := range stmt.Whens {
-							condition := Cond_{}
+							condition := CondBase{}
 							// left
-							condition.Lexpr = &Attr_{Name: stmt.Expr.(*sqlparser.ColName).Name.String()}
+							condition.Lexpr = &AttrBase{Name: stmt.Expr.(*sqlparser.ColName).Name.String()}
 							// right
 							res, err := p.genNonCondExpr(stmtIn.Cond)
 							if err != nil {
@@ -45,7 +45,7 @@ func (p *ProcessorSql) genProjectOper(stmt *sqlparser.Select) error {
 							}
 							condition.Rexpr = res
 							// operator
-							condition.Comp = &Comp_{Name: Eq}
+							condition.Comp = &CompBase{Name: Eq}
 							caseExpr.CondExpr = append(caseExpr.CondExpr, &condition)
 							res, err = p.genNonCondExpr(stmtIn.Val)
 							if err != nil {
@@ -64,7 +64,7 @@ func (p *ProcessorSql) genProjectOper(stmt *sqlparser.Select) error {
 						// select CASE WHEN condition THEN expression ELSE expression END;
 					} else {
 						for _, stmtIn := range stmt.Whens {
-							var condExpr Expr_
+							var condExpr ExprBase
 							var err error
 							condExpr, err = p.genExpr(stmtIn.Cond)
 							if err != nil {
@@ -73,14 +73,14 @@ func (p *ProcessorSql) genProjectOper(stmt *sqlparser.Select) error {
 							if condExpr.GetType() != CondType {
 								return fmt.Errorf("not support: select CASE WHEN non-condition!! THEN expression ELSE expression END;")
 							}
-							caseExpr.CondExpr = append(caseExpr.CondExpr, condExpr.(*Cond_))
-							caseExpr.ThenExpr = append(caseExpr.ThenExpr, &Const_{Value: string(stmtIn.Val.(*sqlparser.SQLVal).Val)})
+							caseExpr.CondExpr = append(caseExpr.CondExpr, condExpr.(*CondBase))
+							caseExpr.ThenExpr = append(caseExpr.ThenExpr, &ConstBase{Value: string(stmtIn.Val.(*sqlparser.SQLVal).Val)})
 						}
 						if stmt.Else != nil {
-							caseExpr.ElseExpr = &Const_{Value: string(stmt.Else.(*sqlparser.SQLVal).Val)}
+							caseExpr.ElseExpr = &ConstBase{Value: string(stmt.Else.(*sqlparser.SQLVal).Val)}
 						}
 					}
-					p.Plan.ProjectOper.Fields = append(p.Plan.ProjectOper.Fields, &Field_{Expr: &caseExpr, Alias: stmtOut.As.String()})
+					p.Plan.ProjectOper.Fields = append(p.Plan.ProjectOper.Fields, &FieldBase{Expr: &caseExpr, Alias: stmtOut.As.String()})
 
 				} else {
 					expr, err := p.genNonCondExpr(stmtOut.Expr)
@@ -91,14 +91,14 @@ func (p *ProcessorSql) genProjectOper(stmt *sqlparser.Select) error {
 					if name == "" {
 						name = p.getName(expr)
 					}
-					p.Plan.ProjectOper.Fields = append(p.Plan.ProjectOper.Fields, &Field_{Expr: expr, Alias: name})
+					p.Plan.ProjectOper.Fields = append(p.Plan.ProjectOper.Fields, &FieldBase{Expr: expr, Alias: name})
 				}
 
 			}
 		// to do: select star field
-		case *sqlparser.StarExpr:
-			{
-			}
+		// case *sqlparser.StarExpr:
+		// 	{
+		// 	}
 		default:
 			return fmt.Errorf("unsupported expression type: %T", stmtOut)
 		}
@@ -107,8 +107,8 @@ func (p *ProcessorSql) genProjectOper(stmt *sqlparser.Select) error {
 }
 
 // function: generate predicate operator
-func (p *ProcessorSql) genPredicateOper(stmt *sqlparser.Select) error {
-	p.Plan.PredicateOper = &PredicateOper_{}
+func (p *ProcessorSQL) genPredicateOper(stmt *sqlparser.Select) error {
+	p.Plan.PredicateOper = &PredicateOperator{}
 	if stmt.Where == nil {
 		return nil
 	}
@@ -119,17 +119,17 @@ func (p *ProcessorSql) genPredicateOper(stmt *sqlparser.Select) error {
 	if root.GetType() != CondType {
 		return fmt.Errorf("error in genExpr: select expression where non-condition")
 	}
-	p.Plan.PredicateOper.Root = root.(*Cond_)
+	p.Plan.PredicateOper.Root = root.(*CondBase)
 	return nil
 }
 
 // function: generate expression with condition
-func (p *ProcessorSql) genExpr(expr sqlparser.Expr) (Expr_, error) {
+func (p *ProcessorSQL) genExpr(expr sqlparser.Expr) (ExprBase, error) {
 	switch expr := expr.(type) {
 	// non-leaf node
 	case *sqlparser.ComparisonExpr:
 		{
-			condition := Cond_{}
+			condition := CondBase{}
 			// left
 			left, err := p.genNonCondExpr(expr.Left)
 			if err != nil {
@@ -143,17 +143,17 @@ func (p *ProcessorSql) genExpr(expr sqlparser.Expr) (Expr_, error) {
 			}
 			condition.Rexpr = right
 			// operator
-			condition.Comp = &Comp_{Name: strings.ToUpper(expr.Operator)}
+			condition.Comp = &CompBase{Name: strings.ToUpper(expr.Operator)}
 			if expr.Operator == sqlparser.RegexpStr || expr.Operator == sqlparser.NotRegexpStr {
 				if right.GetType() == ConstType {
-					condition.Comp.PreVal, err = preEvaluateRegex(right.(*Const_).Value)
+					condition.Comp.PreVal, err = preEvaluateRegex(right.(*ConstBase).Value)
 					if err != nil {
 						return nil, err
 					}
 				}
 			} else if expr.Operator == sqlparser.LikeStr || expr.Operator == sqlparser.NotLikeStr {
 				if right.GetType() == ConstType {
-					condition.Comp.PreVal, err = preEvaluateLike(right.(*Const_).Value)
+					condition.Comp.PreVal, err = preEvaluateLike(right.(*ConstBase).Value)
 					if err != nil {
 						return nil, err
 					}
@@ -163,7 +163,7 @@ func (p *ProcessorSql) genExpr(expr sqlparser.Expr) (Expr_, error) {
 		}
 	case *sqlparser.AndExpr:
 		{
-			condition := Cond_{}
+			condition := CondBase{}
 			// left
 			left, err := p.genExpr(expr.Left)
 			if err != nil {
@@ -177,12 +177,12 @@ func (p *ProcessorSql) genExpr(expr sqlparser.Expr) (Expr_, error) {
 			}
 			condition.Rexpr = right
 			// operator
-			condition.Comp = &Comp_{Name: And}
+			condition.Comp = &CompBase{Name: And}
 			return &condition, nil
 		}
 	case *sqlparser.OrExpr:
 		{
-			condition := Cond_{}
+			condition := CondBase{}
 			// left
 			left, err := p.genExpr(expr.Left)
 			if err != nil {
@@ -196,46 +196,46 @@ func (p *ProcessorSql) genExpr(expr sqlparser.Expr) (Expr_, error) {
 			}
 			condition.Rexpr = right
 			// operator
-			condition.Comp = &Comp_{Name: Or}
+			condition.Comp = &CompBase{Name: Or}
 			return &condition, nil
 		}
 	// e.g.:select name from users where id;  select name from users where md5(id);  select name from users where 1;
 	case *sqlparser.ColName, *sqlparser.SQLVal, *sqlparser.FuncExpr, *sqlparser.NullVal:
 		{
-			condition := Cond_{}
+			condition := CondBase{}
 			expr, err := p.genNonCondExpr(expr)
 			if err != nil {
 				return nil, err
 			}
 			condition.Lexpr = expr
-			condition.Rexpr = &None_{}
-			condition.Comp = &Comp_{Name: Neq}
+			condition.Rexpr = &NoneBase{}
+			condition.Comp = &CompBase{Name: Neq}
 			return &condition, nil
 		}
 	// e.g.:select name from users where !id;   select name from users where not id;
 	// to do: not support select name from users where not !id;
 	case *sqlparser.UnaryExpr:
 		{
-			condition := Cond_{}
+			condition := CondBase{}
 			expr, err := p.genNonCondExpr(expr.Expr)
 			if err != nil {
 				return nil, err
 			}
 			condition.Lexpr = expr
-			condition.Rexpr = &None_{}
-			condition.Comp = &Comp_{Name: Eq}
+			condition.Rexpr = &NoneBase{}
+			condition.Comp = &CompBase{Name: Eq}
 			return &condition, nil
 		}
 	case *sqlparser.NotExpr:
 		{
-			condition := Cond_{}
+			condition := CondBase{}
 			expr, err := p.genNonCondExpr(expr.Expr)
 			if err != nil {
 				return nil, err
 			}
 			condition.Lexpr = expr
-			condition.Rexpr = &None_{}
-			condition.Comp = &Comp_{Name: Eq}
+			condition.Rexpr = &NoneBase{}
+			condition.Comp = &CompBase{Name: Eq}
 			return &condition, nil
 		}
 	case *sqlparser.ParenExpr:
@@ -248,33 +248,33 @@ func (p *ProcessorSql) genExpr(expr sqlparser.Expr) (Expr_, error) {
 }
 
 // function: generate expression except condition
-func (p *ProcessorSql) genNonCondExpr(leafNode sqlparser.Expr) (Expr_, error) {
+func (p *ProcessorSQL) genNonCondExpr(leafNode sqlparser.Expr) (ExprBase, error) {
 	switch leafNode := leafNode.(type) {
 	// ordinary column
 	case *sqlparser.ColName:
 		{
-			expr := Attr_{}
+			expr := AttrBase{}
 			expr.Name = leafNode.Name.String()
 			return &expr, nil
 		}
 	case *sqlparser.SQLVal:
 		{
-			expr := Const_{}
+			expr := ConstBase{}
 			expr.Value = string(leafNode.Val)
 			return &expr, nil
 		}
 	// scalar function
 	case *sqlparser.FuncExpr:
 		{
-			expr := Func_{}
+			expr := FuncBase{}
 			for _, stmt := range leafNode.Exprs {
 				switch stmt := stmt.(*sqlparser.AliasedExpr).Expr.(type) {
 				case *sqlparser.ColName:
-					expr.Param = append(expr.Param, &Attr_{
+					expr.Param = append(expr.Param, &AttrBase{
 						Name: stmt.Name.String(),
 					})
 				case *sqlparser.SQLVal:
-					expr.Param = append(expr.Param, &Const_{
+					expr.Param = append(expr.Param, &ConstBase{
 						Value: string(stmt.Val),
 					})
 				case *sqlparser.FuncExpr:
@@ -287,7 +287,7 @@ func (p *ProcessorSql) genNonCondExpr(leafNode sqlparser.Expr) (Expr_, error) {
 					}
 				case *sqlparser.ComparisonExpr:
 					{
-						condition := Cond_{}
+						condition := CondBase{}
 						// left
 						left, err := p.genNonCondExpr(stmt.Left)
 						if err != nil {
@@ -301,17 +301,17 @@ func (p *ProcessorSql) genNonCondExpr(leafNode sqlparser.Expr) (Expr_, error) {
 						}
 						condition.Rexpr = right
 						// operator
-						condition.Comp = &Comp_{Name: strings.ToUpper(stmt.Operator)} // to do: check operator
+						condition.Comp = &CompBase{Name: strings.ToUpper(stmt.Operator)} // to do: check operator
 						if stmt.Operator == sqlparser.RegexpStr || stmt.Operator == sqlparser.NotRegexpStr {
 							if right.GetType() == ConstType {
-								condition.Comp.PreVal, err = preEvaluateRegex(right.(*Const_).Value)
+								condition.Comp.PreVal, err = preEvaluateRegex(right.(*ConstBase).Value)
 								if err != nil {
 									return nil, err
 								}
 							}
 						} else if stmt.Operator == sqlparser.LikeStr || stmt.Operator == sqlparser.NotLikeStr {
 							if right.GetType() == ConstType {
-								condition.Comp.PreVal, err = preEvaluateLike(right.(*Const_).Value)
+								condition.Comp.PreVal, err = preEvaluateLike(right.(*ConstBase).Value)
 								if err != nil {
 									return nil, err
 								}
@@ -320,7 +320,7 @@ func (p *ProcessorSql) genNonCondExpr(leafNode sqlparser.Expr) (Expr_, error) {
 						expr.Param = append(expr.Param, &condition)
 					}
 				case *sqlparser.NullVal:
-					expr.Param = append(expr.Param, &Const_{
+					expr.Param = append(expr.Param, &ConstBase{
 						Value: "NULL",
 					})
 				}
@@ -335,23 +335,26 @@ func (p *ProcessorSql) genNonCondExpr(leafNode sqlparser.Expr) (Expr_, error) {
 			var param []string
 			for _, item := range expr.Param {
 				switch item := item.(type) {
-				case *Attr_:
+				case *AttrBase:
 					param = append(param, item.Name)
-				case *Const_:
+				case *ConstBase:
 					param = append(param, item.Value)
-				case *Func_:
+				case *FuncBase:
 					param = append(param, p.getName(item))
-				case *Cond_:
+				case *CondBase:
 					param = append(param, p.getName(item))
 				}
 			}
-			res.Init(param...)
+			err := res.Init(param...)
 			expr.Function = res
+			if err != nil {
+				return nil, err
+			}
 			return &expr, nil
 		}
 	case *sqlparser.NullVal:
 		{
-			expr := Const_{}
+			expr := ConstBase{}
 			expr.Value = "NULL"
 			return &expr, nil
 		}
@@ -360,30 +363,30 @@ func (p *ProcessorSql) genNonCondExpr(leafNode sqlparser.Expr) (Expr_, error) {
 	}
 }
 
-func (p *ProcessorSql) getName(expr Expr_) string {
+func (p *ProcessorSQL) getName(expr ExprBase) string {
 	switch expr := expr.(type) {
-	case *Attr_:
+	case *AttrBase:
 		return expr.Name
-	case *Func_:
+	case *FuncBase:
 		name := expr.Function.Name()
 		name += "("
 		for _, item := range expr.Param {
 			switch item := item.(type) {
-			case *Attr_:
+			case *AttrBase:
 				name += item.Name
-			case *Const_:
+			case *ConstBase:
 				name += item.Value
-			case *Func_:
+			case *FuncBase:
 				name += p.getName(item)
 			}
 		}
 		name += ")"
 		return name
-	case *Const_:
+	case *ConstBase:
 		return expr.Value
-	case *None_:
+	case *NoneBase:
 		return ""
-	case *Cond_:
+	case *CondBase:
 		return p.getName(expr.Lexpr) + " " + expr.Comp.Name + " " + p.getName(expr.Rexpr)
 	default:
 		return "" // to do:case

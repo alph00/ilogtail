@@ -16,21 +16,22 @@ package sql
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/alibaba/ilogtail/pkg/models"
 	"github.com/alibaba/ilogtail/pkg/pipeline"
 	"github.com/alibaba/ilogtail/plugins/test/mock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-type args struct {
+type Args struct {
 	in      *models.PipelineGroupEvents
 	context pipeline.PipelineContext
 }
 
-func newProcessor(script string) (*ProcessorSql, error) {
+func newProcessor(script string) (*ProcessorSQL, error) {
 	ctx := mock.NewEmptyContext("p", "l", "c")
-	processor := &ProcessorSql{
+	processor := &ProcessorSQL{
 		Script:     script,
 		NoKeyError: true,
 	}
@@ -38,7 +39,7 @@ func newProcessor(script string) (*ProcessorSql, error) {
 	return processor, err
 }
 
-func TestProcessorSql_Process(t *testing.T) {
+func TestProcessorSQL_Process(t *testing.T) {
 	data := []map[string]interface{}{
 		{
 			"timestamp":  "1234567890",
@@ -210,7 +211,7 @@ func TestProcessorSql_Process(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p, err := newProcessor(tt.script)
 			require.NoError(t, err)
-			args := args{
+			args := Args{
 				in: &models.PipelineGroupEvents{},
 			}
 			args.context = pipeline.NewObservePipelineConext(10)

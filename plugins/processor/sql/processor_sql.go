@@ -14,13 +14,14 @@
 package sql
 
 import (
+	"github.com/xwb1989/sqlparser"
+
 	"github.com/alibaba/ilogtail/pkg/logger"
 	"github.com/alibaba/ilogtail/pkg/models"
 	"github.com/alibaba/ilogtail/pkg/pipeline"
-	"github.com/xwb1989/sqlparser"
 )
 
-type ProcessorSql struct {
+type ProcessorSQL struct {
 	Script     string
 	NoKeyError bool
 	Plan       SelectPlan
@@ -29,7 +30,7 @@ type ProcessorSql struct {
 
 const pluginName = "processor_sql"
 
-func (p *ProcessorSql) Init(context pipeline.Context) error {
+func (p *ProcessorSQL) Init(context pipeline.Context) error {
 	p.context = context
 	// 1. parse sql scipt
 	astNode, err := sqlparser.Parse(p.Script)
@@ -59,7 +60,7 @@ func (p *ProcessorSql) Init(context pipeline.Context) error {
 	return nil
 }
 
-func (p *ProcessorSql) Process(in *models.PipelineGroupEvents, context pipeline.PipelineContext) {
+func (p *ProcessorSQL) Process(in *models.PipelineGroupEvents, context pipeline.PipelineContext) {
 	// process select plan
 	var newEvents = make([]models.PipelineEvent, 0)
 	for _, event := range in.Events {
@@ -76,17 +77,17 @@ func (p *ProcessorSql) Process(in *models.PipelineGroupEvents, context pipeline.
 	context.Collector().Collect(in.Group, newEvents...)
 }
 
-func (p *ProcessorSql) processEvent(log *models.Log) {
+func (p *ProcessorSQL) processEvent(log *models.Log) {
 	origin := log.GetIndices()
 
 	var in LogContentType = models.NewKeyValues[string]()
 	for k, v := range origin.Iterator() {
-		if v, ok := v.(string); !ok {
+		v, ok := v.(string)
+		if !ok {
 			logger.Errorf(p.context.GetRuntimeContext(), "error in processEvent: %v", "not stringLogContents")
 			return
-		} else {
-			in.Add(k, v)
 		}
+		in.Add(k, v)
 	}
 	success, err := p.predicate(&in)
 	if err != nil {
@@ -106,13 +107,13 @@ func (p *ProcessorSql) processEvent(log *models.Log) {
 	log.SetIndices(*out)
 }
 
-func (*ProcessorSql) Description() string {
+func (*ProcessorSQL) Description() string {
 	return "sql processor for logtail"
 }
 
 func init() {
 	pipeline.Processors[pluginName] = func() pipeline.Processor {
-		return &ProcessorSql{
+		return &ProcessorSQL{
 			Script:     "",
 			NoKeyError: true,
 		}

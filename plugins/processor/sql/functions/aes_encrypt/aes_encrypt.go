@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aes_encrypt
+package aesencrypt
 
 import (
 	"bytes"
@@ -28,14 +28,14 @@ import (
 )
 
 // aes_encrypt
-type Aes_encrypt struct {
+type AesEncrypt struct {
 	cipher    cipher.Block
 	blockSize int
 	key       []byte
 	iv        []byte
 }
 
-func (f *Aes_encrypt) Init(param ...string) error {
+func (f *AesEncrypt) Init(param ...string) error {
 	if len(param) < 2 {
 		return fmt.Errorf("aes_encrypt: need at least 2 parameters")
 	}
@@ -49,7 +49,7 @@ func (f *Aes_encrypt) Init(param ...string) error {
 }
 
 // if str or key_str is NULL, return NULL.
-func (f *Aes_encrypt) Process(param ...string) (string, error) {
+func (f *AesEncrypt) Process(param ...string) (string, error) {
 	if len(param) < 2 {
 		return "", fmt.Errorf("aes_encrypt: need at least 2 parameters")
 	}
@@ -59,12 +59,11 @@ func (f *Aes_encrypt) Process(param ...string) (string, error) {
 	ciphertext, err := f.encrypt(param[0])
 	if err == nil {
 		return hex.EncodeToString(ciphertext), nil
-	} else {
-		return "", fmt.Errorf("encrypt field %v error: %v", param[0], err)
 	}
+	return "", fmt.Errorf("encrypt field %v error: %v", param[0], err)
 }
 
-func (f *Aes_encrypt) encrypt(plaintext string) ([]byte, error) {
+func (f *AesEncrypt) encrypt(plaintext string) ([]byte, error) {
 	paddingData := f.paddingWithPKCS7(plaintext)
 	var ciphertext []byte
 	iv := f.iv
@@ -87,7 +86,7 @@ func (f *Aes_encrypt) encrypt(plaintext string) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func (f *Aes_encrypt) paddingWithPKCS7(data string) []byte {
+func (f *AesEncrypt) paddingWithPKCS7(data string) []byte {
 	paddingSize := f.blockSize - len(data)%f.blockSize
 	dataBytes := make([]byte, len(data)+paddingSize)
 	copy(dataBytes, data)
@@ -95,7 +94,7 @@ func (f *Aes_encrypt) paddingWithPKCS7(data string) []byte {
 	return dataBytes
 }
 
-func (f *Aes_encrypt) parseKey(key string) error {
+func (f *AesEncrypt) parseKey(key string) error {
 	var err error
 	// Decode from hex to bytes.
 	if f.key, err = hex.DecodeString(key); err != nil {
@@ -108,7 +107,7 @@ func (f *Aes_encrypt) parseKey(key string) error {
 	return nil
 }
 
-func (f *Aes_encrypt) parseIV() error {
+func (f *AesEncrypt) parseIV() error {
 	iv := strings.Repeat("0", 16*2)
 	var err error
 	if f.iv, err = hex.DecodeString(iv); err != nil {
@@ -121,12 +120,12 @@ func (f *Aes_encrypt) parseIV() error {
 	return nil
 }
 
-func (f *Aes_encrypt) Name() string {
+func (f *AesEncrypt) Name() string {
 	return "aes_encrypt"
 }
 
 func init() {
 	sql.FunctionMap["aes_encrypt"] = func() sql.Function {
-		return &Aes_encrypt{}
+		return &AesEncrypt{}
 	}
 }

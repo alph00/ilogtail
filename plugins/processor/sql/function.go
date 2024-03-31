@@ -14,8 +14,8 @@
 package sql
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
+	"crypto/md5"  // #nosec
+	"crypto/sha1" // #nosec
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
@@ -99,9 +99,9 @@ func init() {
 }
 
 // concat_ws
-type Concat_ws struct{}
+type ConcatWs struct{}
 
-func (f *Concat_ws) Init(param ...string) error {
+func (f *ConcatWs) Init(param ...string) error {
 	if len(param) < 2 {
 		return fmt.Errorf("concat_ws: need at least 2 parameters")
 	}
@@ -109,7 +109,7 @@ func (f *Concat_ws) Init(param ...string) error {
 }
 
 // if separator is NULL, return NULL. if string1, string2, ..., stringN has NULL, ignore it.
-func (f *Concat_ws) Process(param ...string) (string, error) {
+func (f *ConcatWs) Process(param ...string) (string, error) {
 	if len(param) < 2 {
 		return "", fmt.Errorf("concat_ws: need at least 2 parameters")
 	}
@@ -131,13 +131,13 @@ func (f *Concat_ws) Process(param ...string) (string, error) {
 	return result, nil
 }
 
-func (f *Concat_ws) Name() string {
+func (f *ConcatWs) Name() string {
 	return "concat_ws"
 }
 
 func init() {
 	FunctionMap["concat_ws"] = func() Function {
-		return &Concat_ws{}
+		return &ConcatWs{}
 	}
 }
 
@@ -308,9 +308,9 @@ func (f *Substring) Process(param ...string) (string, error) {
 		return "NULL", nil
 	}
 	// param[1]: start search position;  default: 1
-	position := 1
-	var err error
-	position, err = strconv.Atoi(param[1])
+	// position := 1
+	// var err error
+	position, err := strconv.Atoi(param[1])
 	if err != nil {
 		return "", fmt.Errorf("substring: position parameter should be a number")
 	}
@@ -352,9 +352,9 @@ func init() {
 }
 
 // substring_index
-type Substring_index struct{}
+type SubstringIndex struct{}
 
-func (f *Substring_index) Init(param ...string) error {
+func (f *SubstringIndex) Init(param ...string) error {
 	if len(param) < 3 {
 		return fmt.Errorf("substrindex: need at least 3 parameters")
 	}
@@ -362,7 +362,7 @@ func (f *Substring_index) Init(param ...string) error {
 }
 
 // substring_index(str,delim,count) return the substring from 'str' before 'count' occurrences of the delimiter delim.
-func (f *Substring_index) Process(param ...string) (string, error) {
+func (f *SubstringIndex) Process(param ...string) (string, error) {
 	if len(param) < 3 {
 		return "", fmt.Errorf("substrindex: need at least 3 parameters")
 	}
@@ -376,9 +376,10 @@ func (f *Substring_index) Process(param ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if count == 0 {
+	switch {
+	case count == 0:
 		return "", nil
-	} else if count > 0 {
+	case count > 0:
 		// param[1]: delim;  necessary
 		delim := param[1]
 		pos := 0
@@ -390,7 +391,7 @@ func (f *Substring_index) Process(param ...string) (string, error) {
 			pos += posIn + 1
 		}
 		return str[:pos-1], nil
-	} else if count < 0 {
+	case count < 0:
 		count = -count
 		// param[1]: delim;  necessary
 		delim := param[1]
@@ -406,13 +407,13 @@ func (f *Substring_index) Process(param ...string) (string, error) {
 	return "", fmt.Errorf("substrindex: count parameter should be a number")
 }
 
-func (f *Substring_index) Name() string {
+func (f *SubstringIndex) Name() string {
 	return "substring_index"
 }
 
 func init() {
 	FunctionMap["substring_index"] = func() Function {
-		return &Substring_index{}
+		return &SubstringIndex{}
 	}
 }
 
@@ -575,11 +576,11 @@ func init() {
 }
 
 // regexp_instr
-type Regexp_instr struct {
+type RegexpInstr struct {
 	Pattern *regexp.Regexp
 }
 
-func (f *Regexp_instr) Init(param ...string) error {
+func (f *RegexpInstr) Init(param ...string) error {
 	if len(param) < 2 {
 		return fmt.Errorf("regexp_instr: need at least 2 parameters")
 	}
@@ -593,7 +594,7 @@ func (f *Regexp_instr) Init(param ...string) error {
 }
 
 // now support param[0] ~ param[4], not support param[5]: mode
-func (f *Regexp_instr) Process(param ...string) (string, error) {
+func (f *RegexpInstr) Process(param ...string) (string, error) {
 	if len(param) < 2 {
 		return "", fmt.Errorf("regexp_instr: need at least 2 parameters")
 	}
@@ -601,12 +602,12 @@ func (f *Regexp_instr) Process(param ...string) (string, error) {
 		if param[0] == "NULL" || param[1] == "NULL" {
 			return "NULL", nil
 		}
-		return_option := 0
+		returnOption := 0
 		if len(param) >= 5 {
 			var err error
-			return_option, err = strconv.Atoi(param[4])
+			returnOption, err = strconv.Atoi(param[4])
 			if err != nil {
-				return "", fmt.Errorf("regexp_instr: return_option parameter should be a number")
+				return "", fmt.Errorf("regexp_instr: returnOption parameter should be a number")
 			}
 		}
 		// param[2]: start search position;  default: 1
@@ -631,37 +632,34 @@ func (f *Regexp_instr) Process(param ...string) (string, error) {
 			res := f.Pattern.FindStringIndex(param[0][position-1:])
 			if res == nil {
 				return "NULL", nil
-			} else {
-				return strconv.Itoa(res[return_option] + position - return_option), nil
 			}
-		} else {
-			res := f.Pattern.FindAllStringIndex(param[0][position-1:], -1)
-			if res == nil || len(res) < occurrence {
-				return "NULL", nil
-			} else {
-				return strconv.Itoa(res[occurrence-1][return_option] + position - return_option), nil
-			}
+			return strconv.Itoa(res[returnOption] + position - returnOption), nil
 		}
+		res := f.Pattern.FindAllStringIndex(param[0][position-1:], -1)
+		if res == nil || len(res) < occurrence {
+			return "NULL", nil
+		}
+		return strconv.Itoa(res[occurrence-1][returnOption] + position - returnOption), nil
 	}
 	return "", fmt.Errorf("regexp_instr: compile pattern error when Init")
 }
 
-func (f *Regexp_instr) Name() string {
+func (f *RegexpInstr) Name() string {
 	return "regexp_instr"
 }
 
 func init() {
 	FunctionMap["regexp_instr"] = func() Function {
-		return &Regexp_instr{}
+		return &RegexpInstr{}
 	}
 }
 
 // regexp_like
-type Regexp_like struct {
+type RegexpLike struct {
 	Pattern *regexp.Regexp
 }
 
-func (f *Regexp_like) Init(param ...string) error {
+func (f *RegexpLike) Init(param ...string) error {
 	if len(param) < 2 {
 		return fmt.Errorf("regexp_like: need at least 2 parameters")
 	}
@@ -676,7 +674,7 @@ func (f *Regexp_like) Init(param ...string) error {
 
 // now support param[0] ~ param[1], not support param[2]: mode
 // regexp_like(str, regexp) return 1 if str matches regexp; otherwise it returns 0. If either argument is NULL, the result is NULL.
-func (f *Regexp_like) Process(param ...string) (string, error) {
+func (f *RegexpLike) Process(param ...string) (string, error) {
 	if len(param) < 2 {
 		return "", fmt.Errorf("regexp_like: need at least 2 parameters")
 	}
@@ -692,22 +690,22 @@ func (f *Regexp_like) Process(param ...string) (string, error) {
 	return "", fmt.Errorf("regexp_like: compile pattern error when Init")
 }
 
-func (f *Regexp_like) Name() string {
+func (f *RegexpLike) Name() string {
 	return "regexp_like"
 }
 
 func init() {
 	FunctionMap["regexp_like"] = func() Function {
-		return &Regexp_like{}
+		return &RegexpLike{}
 	}
 }
 
 // regexp_replace
-type Regexp_replace struct {
+type RegexpReplace struct {
 	Pattern *regexp.Regexp
 }
 
-func (f *Regexp_replace) Init(param ...string) error {
+func (f *RegexpReplace) Init(param ...string) error {
 	if len(param) < 3 {
 		return fmt.Errorf("regexp_replace: need at least 3 parameters")
 	}
@@ -720,8 +718,8 @@ func (f *Regexp_replace) Init(param ...string) error {
 	return nil
 }
 
-// now support param[0] ~ param[3], not support param[4]: occurence, param[5]: mode
-func (f *Regexp_replace) Process(param ...string) (string, error) {
+// now support param[0] ~ param[3], not support param[4]: occurrence, param[5]: mode
+func (f *RegexpReplace) Process(param ...string) (string, error) {
 	if len(param) < 3 {
 		return "", fmt.Errorf("regexp_replace: need at least 3 parameters")
 	}
@@ -743,22 +741,22 @@ func (f *Regexp_replace) Process(param ...string) (string, error) {
 	return "", fmt.Errorf("regexp_replace: compile pattern error when Init")
 }
 
-func (f *Regexp_replace) Name() string {
+func (f *RegexpReplace) Name() string {
 	return "regexp_replace"
 }
 
 func init() {
 	FunctionMap["regexp_replace"] = func() Function {
-		return &Regexp_replace{}
+		return &RegexpReplace{}
 	}
 }
 
 // regexp_substr
-type Regexp_substr struct {
+type RegexpSubstr struct {
 	Pattern *regexp.Regexp
 }
 
-func (f *Regexp_substr) Init(param ...string) error {
+func (f *RegexpSubstr) Init(param ...string) error {
 	if len(param) < 2 {
 		return fmt.Errorf("regexp_substr: need at least 2 parameters")
 	}
@@ -772,7 +770,7 @@ func (f *Regexp_substr) Init(param ...string) error {
 }
 
 // now support param[0] ~ param[3], not support param[4]: mode
-func (f *Regexp_substr) Process(param ...string) (string, error) {
+func (f *RegexpSubstr) Process(param ...string) (string, error) {
 	if len(param) < 2 {
 		return "", fmt.Errorf("regexp_substr: need at least 2 parameters")
 	}
@@ -802,28 +800,25 @@ func (f *Regexp_substr) Process(param ...string) (string, error) {
 			res := f.Pattern.FindString(param[0][position-1:])
 			if res == "" {
 				return "NULL", nil
-			} else {
-				return res, nil
 			}
-		} else {
-			res := f.Pattern.FindAllString(param[0][position-1:], -1)
-			if res == nil || len(res) < occurrence {
-				return "NULL", nil
-			} else {
-				return res[occurrence-1], nil
-			}
+			return res, nil
 		}
+		res := f.Pattern.FindAllString(param[0][position-1:], -1)
+		if res == nil || len(res) < occurrence {
+			return "NULL", nil
+		}
+		return res[occurrence-1], nil
 	}
 	return "", fmt.Errorf("regexp_substr: compile pattern error when Init")
 }
 
-func (f *Regexp_substr) Name() string {
+func (f *RegexpSubstr) Name() string {
 	return "regexp_substr"
 }
 
 func init() {
 	FunctionMap["regexp_substr"] = func() Function {
-		return &Regexp_substr{}
+		return &RegexpSubstr{}
 	}
 }
 
@@ -876,7 +871,7 @@ func (f *Md5) Process(param ...string) (string, error) {
 	if param[0] == "NULL" {
 		return "NULL", nil
 	}
-	hash := md5.Sum([]byte(param[0]))
+	hash := md5.Sum([]byte(param[0])) // #nosec
 	return hex.EncodeToString(hash[:]), nil
 }
 
@@ -908,7 +903,7 @@ func (f *Sha1) Process(param ...string) (string, error) {
 	if param[0] == "NULL" {
 		return "NULL", nil
 	}
-	hash := sha1.Sum([]byte(param[0]))
+	hash := sha1.Sum([]byte(param[0])) // #nosec
 	return hex.EncodeToString(hash[:]), nil
 }
 
@@ -924,7 +919,7 @@ func init() {
 
 // sha2
 type Sha2 struct {
-	Sha_length int
+	ShaLength int
 }
 
 func (f *Sha2) Init(param ...string) error {
@@ -933,7 +928,7 @@ func (f *Sha2) Init(param ...string) error {
 	}
 	// param[1]: length;  necessary
 	var err error
-	f.Sha_length, err = strconv.Atoi(param[1])
+	f.ShaLength, err = strconv.Atoi(param[1])
 	if err != nil {
 		return fmt.Errorf("sha2: length parameter should be a number")
 	}
@@ -948,7 +943,7 @@ func (f *Sha2) Process(param ...string) (string, error) {
 	if param[0] == "NULL" || param[1] == "NULL" {
 		return "NULL", nil
 	}
-	switch f.Sha_length {
+	switch f.ShaLength {
 	case 224:
 		{
 			hash := sha256.Sum224([]byte(param[0]))
@@ -985,9 +980,9 @@ func init() {
 }
 
 // to_base64
-type To_base64 struct{}
+type ToBase64 struct{}
 
-func (f *To_base64) Init(param ...string) error {
+func (f *ToBase64) Init(param ...string) error {
 	if len(param) < 1 {
 		return fmt.Errorf("to_base64: need at least 1 parameter")
 	}
@@ -995,7 +990,7 @@ func (f *To_base64) Init(param ...string) error {
 }
 
 // if str is NULL, return NULL.
-func (f *To_base64) Process(param ...string) (string, error) {
+func (f *ToBase64) Process(param ...string) (string, error) {
 	if len(param) < 1 {
 		return "", fmt.Errorf("to_base64: need at least 1 parameter")
 	}
@@ -1005,13 +1000,13 @@ func (f *To_base64) Process(param ...string) (string, error) {
 	return base64.StdEncoding.EncodeToString([]byte(param[0])), nil
 }
 
-func (f *To_base64) Name() string {
+func (f *ToBase64) Name() string {
 	return "to_base64"
 }
 
 func init() {
 	FunctionMap["to_base64"] = func() Function {
-		return &To_base64{}
+		return &ToBase64{}
 	}
 }
 

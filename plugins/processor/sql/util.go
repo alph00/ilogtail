@@ -47,34 +47,32 @@ func preEvaluateLike(pattern string) (*regexp.Regexp, error) {
 func evaluateRegex(left string, right string, pattern *regexp.Regexp) (bool, error) {
 	if pattern != nil {
 		return pattern.MatchString(left), nil
-	} else {
-		if right == "" {
-			return false, nil
-		}
-		found, err := regexp.MatchString(right, left)
-		if err != nil {
-			return false, err
-		}
-		return found, nil
 	}
+	if right == "" {
+		return false, nil
+	}
+	found, err := regexp.MatchString(right, left)
+	if err != nil {
+		return false, err
+	}
+	return found, nil
 }
 
 func evaluateLike(left string, right string, pattern *regexp.Regexp) (bool, error) {
 	if pattern != nil {
 		return pattern.MatchString(left), nil
-	} else {
-		if right == "" {
-			return false, nil
-		}
-		right = strings.ReplaceAll(right, "%", ".*")
-		right = strings.ReplaceAll(right, "_", ".")
-		right = "^" + right + "$"
-		found, err := regexp.MatchString(right, left)
-		if err != nil {
-			return false, err
-		}
-		return found, nil
 	}
+	if right == "" {
+		return false, nil
+	}
+	right = strings.ReplaceAll(right, "%", ".*")
+	right = strings.ReplaceAll(right, "_", ".")
+	right = "^" + right + "$"
+	found, err := regexp.MatchString(right, left)
+	if err != nil {
+		return false, err
+	}
+	return found, nil
 }
 
 // decide whether a string is a number, including 2, 8, 10, 16 hexadecimal integers and floating point numbers
