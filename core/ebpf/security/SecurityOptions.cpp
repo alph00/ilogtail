@@ -356,11 +356,14 @@ bool SecurityOptions::Init(SecurityFilterType filterType,
             // 把options的内容打印出来
             for (auto& i : mOptionList) {
                 for (auto j : i.mCallName) {
+                    LOG_INFO(sLogger, ("callName", j));
                     std::cout << "callName: " << j << " ";
                 }
                 std::cout << endl;
                 SecurityFileFilter fileFilter = std::get<SecurityFileFilter>(i.mFilter);
                 for (auto& j : fileFilter.mFileFilterItem) {
+                    LOG_INFO(sLogger, ("filePath", j.mFilePath));
+                    LOG_INFO(sLogger, ("fileName", j.mFileName));
                     std::cout << "filePath: " << j.mFilePath << std::endl;
                     std::cout << "fileName: " << j.mFileName << std::endl;
                 }
@@ -373,18 +376,23 @@ bool SecurityOptions::Init(SecurityFilterType filterType,
             // 把options的内容打印出来
             for (auto& i : mOptionList) {
                 for (auto j : i.mCallName) {
+                    LOG_INFO(sLogger, ("callName", j));
                     std::cout << "callName: " << j << std::endl;
                 }
                 SecurityProcessFilter processFilter = std::get<SecurityProcessFilter>(i.mFilter);
                 for (auto& j : processFilter.mNamespaceFilter) {
+                    LOG_INFO(sLogger, ("type", j.mType));
                     std::cout << "type: " << j.mType << std::endl;
                     for (auto& k : j.mValueList) {
+                        LOG_INFO(sLogger, ("value", k));
                         std::cout << "value: " << k << std::endl;
                     }
                 }
                 for (auto& j : processFilter.mNamespaceBlackFilter) {
+                    LOG_INFO(sLogger, ("type", j.mType));
                     std::cout << "type: " << j.mType << std::endl;
                     for (auto& k : j.mValueList) {
+                        LOG_INFO(sLogger, ("value", k));
                         std::cout << "value: " << k << std::endl;
                     }
                 }
@@ -396,31 +404,40 @@ bool SecurityOptions::Init(SecurityFilterType filterType,
             // 把options的内容打印出来
             for (auto& i : mOptionList) {
                 for (auto j : i.mCallName) {
+                    LOG_INFO(sLogger, ("callName", j));
                     std::cout << "callName: " << j << std::endl;
                 }
                 SecurityNetworkFilter networkFilter = std::get<SecurityNetworkFilter>(i.mFilter);
                 for (auto& j : networkFilter.mDestAddrList) {
+                    LOG_INFO(sLogger, ("destAddr", j));
                     std::cout << "destAddr: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mDestPortList) {
+                    LOG_INFO(sLogger, ("destPort", j));
                     std::cout << "destPort: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mDestAddrBlackList) {
+                    LOG_INFO(sLogger, ("destAddrBlack", j));
                     std::cout << "destAddrBlack: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mDestPortBlackList) {
+                    LOG_INFO(sLogger, ("destPortBlack", j));
                     std::cout << "destPortBlack: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mSourceAddrList) {
+                    LOG_INFO(sLogger, ("sourceAddr", j));
                     std::cout << "sourceAddr: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mSourcePortList) {
+                    LOG_INFO(sLogger, ("sourcePort", j));
                     std::cout << "sourcePort: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mSourceAddrBlackList) {
+                    LOG_INFO(sLogger, ("sourceAddrBlack", j));
                     std::cout << "sourceAddrBlack: " << j << std::endl;
                 }
                 for (auto& j : networkFilter.mSourcePortBlackList) {
+                    LOG_INFO(sLogger, ("sourcePortBlack", j));
                     std::cout << "sourcePortBlack: " << j << std::endl;
                 }
             }

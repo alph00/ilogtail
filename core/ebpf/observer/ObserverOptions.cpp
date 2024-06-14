@@ -164,6 +164,9 @@ bool ObserverOptions::Init(ObserverType type,
         case ObserverType::FILE: {
             // 把options的内容打印出来
             ObserverFile file = std::get<ObserverFile>(mObserver);
+            LOG_INFO(mContext->GetLogger(), ("profileRemoteServer", file.mProfileRemoteServer));
+            LOG_INFO(mContext->GetLogger(), ("cpuSkipUpload", file.mCpuSkipUpload));
+            LOG_INFO(mContext->GetLogger(), ("memSkipUpload", file.mMemSkipUpload));
             std::cout << "profileRemoteServer: " << file.mProfileRemoteServer << std::endl;
             std::cout << "cpuSkipUpload: " << file.mCpuSkipUpload << std::endl;
             std::cout << "memSkipUpload: " << file.mMemSkipUpload << std::endl;
@@ -175,9 +178,11 @@ bool ObserverOptions::Init(ObserverType type,
             // 把options的内容打印出来
             ObserverProcess process = std::get<ObserverProcess>(mObserver);
             for (auto& i : process.mIncludeCmdRegex) {
+                LOG_INFO(mContext->GetLogger(), ("includeCmdRegex", i));
                 std::cout << "includeCmdRegex: " << i << std::endl;
             }
             for (auto& i : process.mExcludeCmdRegex) {
+                LOG_INFO(mContext->GetLogger(), ("excludeCmdRegex", i));
                 std::cout << "excludeCmdRegex: " << i << std::endl;
             }
 
@@ -188,8 +193,12 @@ bool ObserverOptions::Init(ObserverType type,
             // 把options的内容打印出来
             ObserverNetwork network = std::get<ObserverNetwork>(mObserver);
             for (auto& i : network.mEnableProtocols) {
+                LOG_INFO(mContext->GetLogger(), ("enableProtocols", i));
                 std::cout << "enableProtocols: " << i << std::endl;
             }
+            LOG_INFO(mContext->GetLogger(), ("disableProtocolParse", network.mDisableProtocolParse));
+            LOG_INFO(mContext->GetLogger(), ("disableConnStats", network.mDisableConnStats));
+            LOG_INFO(mContext->GetLogger(), ("enableConnTrackerDump", network.mEnableConnTrackerDump));
             std::cout << "disableProtocolParse: " << network.mDisableProtocolParse << std::endl;
             std::cout << "disableConnStats: " << network.mDisableConnStats << std::endl;
             std::cout << "enableConnTrackerDump: " << network.mEnableConnTrackerDump << std::endl;
