@@ -158,6 +158,48 @@ bool ObserverOptions::Init(ObserverType type,
         default:
             break;
     }
+
+
+    switch (mType) {
+        case ObserverType::FILE: {
+            // 把options的内容打印出来
+            ObserverFile file = std::get<ObserverFile>(mObserver);
+            std::cout << "profileRemoteServer: " << file.mProfileRemoteServer << std::endl;
+            std::cout << "cpuSkipUpload: " << file.mCpuSkipUpload << std::endl;
+            std::cout << "memSkipUpload: " << file.mMemSkipUpload << std::endl;
+
+            // TODO: ebpf_start(type);
+            break;
+        }
+        case ObserverType::PROCESS: {
+            // 把options的内容打印出来
+            ObserverProcess process = std::get<ObserverProcess>(mObserver);
+            for (auto& i : process.mIncludeCmdRegex) {
+                std::cout << "includeCmdRegex: " << i << std::endl;
+            }
+            for (auto& i : process.mExcludeCmdRegex) {
+                std::cout << "excludeCmdRegex: " << i << std::endl;
+            }
+
+            // TODO: ebpf_start(type);
+            break;
+        }
+        case ObserverType::NETWORK: {
+            // 把options的内容打印出来
+            ObserverNetwork network = std::get<ObserverNetwork>(mObserver);
+            for (auto& i : network.mEnableProtocols) {
+                std::cout << "enableProtocols: " << i << std::endl;
+            }
+            std::cout << "disableProtocolParse: " << network.mDisableProtocolParse << std::endl;
+            std::cout << "disableConnStats: " << network.mDisableConnStats << std::endl;
+            std::cout << "enableConnTrackerDump: " << network.mEnableConnTrackerDump << std::endl;
+
+            // TODO: ebpf_start(type);
+            break;
+        }
+        default:
+            break;
+    }
     return true;
 }
 
