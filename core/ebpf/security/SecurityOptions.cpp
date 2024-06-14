@@ -381,16 +381,16 @@ bool SecurityOptions::Init(SecurityFilterType filterType,
                 }
                 SecurityProcessFilter processFilter = std::get<SecurityProcessFilter>(i.mFilter);
                 for (auto& j : processFilter.mNamespaceFilter) {
-                    LOG_INFO(sLogger, ("type", j.mType));
-                    std::cout << "type: " << j.mType << std::endl;
+                    LOG_INFO(sLogger, ("namespaceType", j.mNamespaceType));
+                    std::cout << "namespaceType: " << j.mNamespaceType << std::endl;
                     for (auto& k : j.mValueList) {
                         LOG_INFO(sLogger, ("value", k));
                         std::cout << "value: " << k << std::endl;
                     }
                 }
                 for (auto& j : processFilter.mNamespaceBlackFilter) {
-                    LOG_INFO(sLogger, ("type", j.mType));
-                    std::cout << "type: " << j.mType << std::endl;
+                    LOG_INFO(sLogger, ("namespaceType", j.mNamespaceType));
+                    std::cout << "namespaceType: " << j.mNamespaceType << std::endl;
                     for (auto& k : j.mValueList) {
                         LOG_INFO(sLogger, ("value", k));
                         std::cout << "value: " << k << std::endl;
