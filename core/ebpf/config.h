@@ -95,6 +95,8 @@ public:
 
     void LoadEbpfConfig(const Json::Value& confJson);
 
+    void LoadEbpfConfigLegal(const Json::Value& confJson);
+
     int32_t GetReceiveEventChanCap() const { return mReceiveEventChanCap; }
 
     const AdminConfig& GetAdminConfig() const { return mAdminConfig; }
